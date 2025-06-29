@@ -180,8 +180,8 @@ numTrials = 1000
 numSummands = 50
 ScholesMinusCallPrice = BlackScholes(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma) - callPrice
 payoffVector, simAvgProfit = MonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numSummands, False)
-print(f"The theoretical gain/loss from Black-Scholes is {ScholesMinusCallPrice}.")
-print(f"The experimental gain/loss from the Monte Carlo simulation is {simAvgProfit}.")
+print(f"The gain/loss from buying at the Black‑Scholes price is {ScholesMinusCallPrice}.")
+print(f"The gain/loss from the Monte‑Carlo simulation buying at callPrice is {simAvgProfit}.")
 print(f"The error between the Monte-Carlo simulation with the wavelet construction and Black-Scholes is {abs(ScholesMinusCallPrice - simAvgProfit)}.")
 
 # We analyze the expected error of our payoffs to quantify how good the Monte-Carlo simulation is.
@@ -189,7 +189,7 @@ samplePayoffVar = statistics.variance(payoffVector) # sample variance
 samplePayoffSD = math.sqrt(samplePayoffVar) # standard deviation of payoffs
 newSamplePayoffSD = samplePayoffSD / math.sqrt(numTrials) # apply Central Limit Theorem to numTrials
 newSamplePayoffSD *= math.exp(-riskFreeRate * totalTime) # apply discount factor, because payoffs are realized in totalTime years
-print(f"The error of the Monte-Carlo simulation with the wavelet construction should converge in distribution to N({0.0}, {newSamplePayoffSD ** 2}).")
+print(f"The error of the Monte-Carlo simulation with the wavelet construction should converge in distribution to N({0.0}, {newSamplePayoffSD ** 2}) by CLT.")
 print("\n")
 
 '''
@@ -240,14 +240,14 @@ def EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRa
 numPoints = 100
 ScholesMinusCallPrice = BlackScholes(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma) - callPrice
 payoffVector, simAvgProfit = EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numPoints, True)
-print(f"The theoretical gain/loss from Black-Scholes is {ScholesMinusCallPrice}.")
-print(f"The experimental gain/loss from the Monte-Carlo simulation with the Euler-Maruyama approach is {simAvgProfit}")
+print(f"The gain/loss from buying at the Black‑Scholes price is {ScholesMinusCallPrice}.")
+print(f"The gain/loss from the Monte‑Carlo simulation buying at callPrice with the Euler‑Maruyama approach is {simAvgProfit}")
 print(f"The error between the Monte-Carlo simulation with the Euler-Maruyama approach and Black-Scholes is {abs(ScholesMinusCallPrice - simAvgProfit)}.")
 # We analyze the error similarly to the other Monte-Carlo approach, using the same parameters.
 samplePayoffVar = statistics.variance(payoffVector) # sample variance
 samplePayoffSD = math.sqrt(samplePayoffVar) # standard deviation of payoffs
 newSamplePayoffSD = samplePayoffSD / math.sqrt(numTrials) # apply Central Limit Theorem to numTrials
 newSamplePayoffSD *= math.exp(-riskFreeRate * totalTime) # apply discount factor, because payoffs are realized in totalTime years
-print(f"The error of the Monte-Carlo simulation with the Euler-Maruyama approach should converge in distribution to N({0.0}, {newSamplePayoffSD ** 2}).")
+print(f"The error of the Monte-Carlo simulation with the Euler-Maruyama approach should converge in distribution to N({0.0}, {newSamplePayoffSD ** 2}) by CLT.")
 
 
