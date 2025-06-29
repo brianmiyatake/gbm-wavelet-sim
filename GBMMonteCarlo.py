@@ -5,6 +5,9 @@ from scipy.stats import norm
 import math
 import statistics
 
+# fixed seed for reproducibility
+rng = np.random.default_rng(0)
+
 ''' 
 Following the wavelet construction of Brownian motion from Michael Steele's Stochastic Calculus
 and Financial Applications
@@ -51,7 +54,7 @@ We now construct the series expansion of standard Brownian motion, truncated to 
 # Returns an array ypoints that corresponds to B_t for each t in xpoints.
 def BrownianMotion(xpoints, numSummands):
     ypoints = []
-    Z = np.random.normal(0, 1, [numSummands])
+    Z = rng.normal(0, 1, numSummands)
     for x in xpoints:
         scaledX = x / xpoints[-1]
         tempFactor = math.sqrt(xpoints[-1])
@@ -62,15 +65,16 @@ def BrownianMotion(xpoints, numSummands):
     return ypoints
 
 # test BrownianMotion function
-# T = 10
-# numPoints = 128
-# numSummands = 128
-# xpoints = np.linspace(0, T, numPoints)
-# ypoints = BrownianMotion(xpoints, numPoints)
-# plt.plot(xpoints, ypoints)
-# plt.xlabel("Time 0 <= t <= T")
-# plt.ylabel("One path of standard Brownian motion")
-# plt.show()
+T = 10
+numPoints = 128
+numSummands = 128
+xpoints = np.linspace(0, T, numPoints)
+ypoints = BrownianMotion(xpoints, numPoints)
+plt.plot(xpoints, ypoints)
+plt.title("One path of standard Brownian motion")
+plt.xlabel("Time 0 <= t <= T")
+plt.ylabel("Value")
+plt.show()
 
 '''
 Using the construction of Brownian motion above, we now construct geometric Brownian motion.
@@ -94,14 +98,15 @@ def GeometricBrownianMotion(xpoints, numSummands, x0, mu, sigma):
     return ypoints
 
 # test GeometricBrownianMotion function
-# T = 10
-# P = 128
-# xpoints = np.linspace(0, T, P)
-# ypoints = GeometricBrownianMotion(xpoints, 256, 10, 0.03, 0.05)
-# plt.plot(xpoints, ypoints)
-# plt.xlabel("Time 0 <= t <= T")
-# plt.ylabel("One path of geometric Brownian motion")
-# plt.show()
+T = 10
+P = 128
+xpoints = np.linspace(0, T, P)
+ypoints = GeometricBrownianMotion(xpoints, 256, 10, 0.03, 0.05)
+plt.plot(xpoints, ypoints)
+plt.title("One path of geometric Brownian motion")
+plt.xlabel("Time 0 <= t <= T")
+plt.ylabel("Value")
+plt.show()
 
 '''
 Assuming a stock follows geometric Brownian motion, we can calculate a theoretical price of a
@@ -132,7 +137,7 @@ def MonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, s
     payoffs = []
     if not plot:
         for _ in range(numTrials):
-            Z = np.random.normal(0.0, math.sqrt(totalTime))
+            Z = rng.normal(0.0, math.sqrt(totalTime))
             y = initialStockPrice * math.exp((riskFreeRate - 0.5 * math.pow(sigma, 2)) * totalTime + sigma * Z)
             payoffs.append(payoff(y, strikePrice))
     else:
@@ -144,15 +149,16 @@ def MonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, s
             payoffs.append(payoff(ypoints[-1], strikePrice))
             if plot:
                 plt.plot(xpoints, ypoints)
+        plt.title("Monte-Carlo simulation of GBM with wavelet construction")
         plt.xlabel("Time elapsed (years)")
-        plt.ylabel("Valuations of a random stock price following GBM")
+        plt.ylabel("Value of path in GBM")
         plt.show()
         
     # include the discount factor, because we the payoffs only come after maturation time.
     return payoffs, math.exp(-riskFreeRate * totalTime) * np.mean(payoffs) - callPrice
 
 # test MonteCarloCallSim
-# print(MonteCarloCallSim(10, 10, 12, 0.03, 0.05, 1.6, 100, 50, True))
+MonteCarloCallSim(10, 10, 12, 0.03, 0.05, 1.6, 100, 50, True)
 
 # Notice how if the callPrice is placed below the price outputted by the Black Scholes equation,
 # we gain a net profit most of the time because the call is on "discount" relative to its theoretical price.
@@ -196,30 +202,44 @@ respectively. This serves as the motivation for the Euler-Maruyama method for ap
 # $Y_{n+1} - Y_n = \mu Y_n(t_{n + 1} - t_n) + \sigma Y_n(B_{t_{n + 1}} - B_{t_n})$ for a partition $0=t_0 < t_1 < \cdots < t_n = T$ of [0, T]
 # into N + 1 equal subintervals.
 
-def GBMEulerMaruyamaApprox(x0, totalTime, riskFreeRate, sigma, numPoints):
+def GBMEulerMaruyamaApprox(x0, totalTime, riskFreeRate, sigma, numPoints, plot = False):
     Y = [0 for _ in range(numPoints)]
     Y[0] = x0
     dt = totalTime / (numPoints - 1)
     for n in range(numPoints - 1):
-        Y[n + 1] = Y[n] + riskFreeRate * Y[n] * dt + sigma * Y[n] * np.random.normal(0, math.sqrt(dt))
-    return Y[-1]
+        Y[n + 1] = Y[n] + riskFreeRate * Y[n] * dt + sigma * Y[n] * rng.normal(0, math.sqrt(dt))
+    if plot:
+        plt.plot(np.linspace(0, totalTime, numPoints), Y)
+        plt.title("One path of geometric Brownian motion")
+        plt.xlabel("Time 0 <= t <= T")
+        plt.ylabel("Value")
+        plt.show()
+    return Y
 
 # test GBMEulerMaruyamaApprox function
-# print(GBMEulerMaruyamaApprox(10, 10, 0.03, 0.05, 100))
+GBMEulerMaruyamaApprox(10, 10, 0.03, 0.05, 100, True)
 
 '''
 Mirror Monte-Carlo approach with the Euler-Maruyama approach.
 '''
 
-def EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numPoints):
+def EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numPoints, plot = False):
     payoffs = []
     for _ in range(numTrials):
-        payoffs.append(payoff(GBMEulerMaruyamaApprox(initialStockPrice, totalTime, riskFreeRate, sigma, numPoints), strikePrice))
+        ypoints = GBMEulerMaruyamaApprox(initialStockPrice, totalTime, riskFreeRate, sigma, numPoints)
+        if plot:
+            plt.plot(np.linspace(0, totalTime, numPoints), ypoints)
+        payoffs.append(payoff(ypoints[-1], strikePrice))
+    if plot:
+        plt.title("Monte-Carlo simulation of GBM with Euler-Maruyama")
+        plt.xlabel("Time elapsed (years)")
+        plt.ylabel("Value of path in GBM")
+        plt.show()
     return payoffs, math.exp(-riskFreeRate * totalTime) * np.mean(payoffs) - callPrice
 
 numPoints = 100
 ScholesMinusCallPrice = BlackScholes(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma) - callPrice
-payoffVector, simAvgProfit = EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numPoints)
+payoffVector, simAvgProfit = EulerMonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numPoints, True)
 print(f"The theoretical gain/loss from Black-Scholes is {ScholesMinusCallPrice}.")
 print(f"The experimental gain/loss from the Monte-Carlo simulation with the Euler-Maruyama approach is {simAvgProfit}")
 print(f"The error between the Monte-Carlo simulation with the Euler-Maruyama approach and Black-Scholes is {abs(ScholesMinusCallPrice - simAvgProfit)}.")
