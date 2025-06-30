@@ -133,7 +133,7 @@ def payoff(currentPrice, strikePrice):
 def MonteCarloCallSim(initialStockPrice, totalTime, strikePrice, riskFreeRate, sigma, callPrice, numTrials, numSummands, plot = False):
     # Since our GeometricBrownianMotion function takes in numPoints as a parameter, we can optimize 
     # the speed of calculation for our payoff by not using the function when plotting is False.
-    # Instead, we view B_totalTime as N(0.0, sqrt(totalTime)) and plug this into our closed-form for GBM.
+    # Instead, we view B_totalTime as N(0.0, totalTime) and plug this into our closed-form for GBM.
     payoffs = []
     if not plot:
         for _ in range(numTrials):
